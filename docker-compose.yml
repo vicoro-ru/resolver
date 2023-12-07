@@ -3,7 +3,7 @@ services:
   bind:
     image: internetsystemsconsortium/bind9:9.18
     container_name: resolver
-    restart: always
+    restart: unless-stopped
     ports:
       - 53:53/tcp
       - 53:53/udp
@@ -15,7 +15,7 @@ services:
   nginx:
     image: nginx:stable-alpine3.17-slim
     container_name: resolver-nginx
-    restart: always
+    restart: unless-stopped
     ports:
       - 80:80/tcp
       - 443:443/tcp
@@ -28,27 +28,29 @@ services:
   zabbix:
     image: zabbix/zabbix-server-mysql:latest
     container_name: resolver-zabbix
-    restart: always
+    restart: unless-stopped
     networks:
       backend:
         ipv4_address: 172.16.22.4
     volumes:
       - /etc/localtime:/etc/localtime:ro
-  zabbix-mysql:
-    image: mysql:latest
-    enviroment:
-      - MYSQL_DATABASE="zabbix"
-      - MYSQL_USER="zabbix"
-      - MYSQL_PASSWORD="zabbix_pwd"
   webmin:
     image: vulhub/webmin:1.910
     container_name: resolver-webmin
-    restart: always
+    restart: unless-stopped
     networks:
       backend:
         ipv4_address: 172.16.22.5
     volumes:
       - /etc/localtime:/etc/localtime:ro
+  mysql:
+    image: mysql:latest
+    restart: unless-stopped
+    enviroment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    networks:
+      backend:
+        ipv4_address: 172.16.22.6
 networks:
   backend:
     name: resolver
