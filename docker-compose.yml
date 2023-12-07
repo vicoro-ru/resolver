@@ -1,0 +1,61 @@
+version: "3.5"
+services:
+  bind:
+    image: internetsystemsconsortium/bind9:9.18
+    container_name: resolver
+    restart: always
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+    networks:
+      backend:
+        ipv4_address: 172.16.22.2
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+  nginx:
+    image: nginx:stable-alpine3.17-slim
+    container_name: resolver-nginx
+    restart: always
+    ports:
+      - 80:80/tcp
+      - 443:443/tcp
+    networks:
+      backend:
+        ipv4_address: 172.16.22.3
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  zabbix:
+    image: zabbix/zabbix-server-mysql:latest
+    container_name: resolver-zabbix
+    restart: always
+    networks:
+      backend:
+        ipv4_address: 172.16.22.4
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+  zabbix-mysql:
+    image: mysql:latest
+    enviroment:
+      - MYSQL_DATABASE="zabbix"
+      - MYSQL_USER="zabbix"
+      - MYSQL_PASSWORD="zabbix_pwd"
+  webmin:
+    image: vulhub/webmin:1.910
+    container_name: resolver-webmin
+    restart: always
+    networks:
+      backend:
+        ipv4_address: 172.16.22.5
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+networks:
+  backend:
+    name: resolver
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+          -
+            subnet: 172.16.22.0/29
+            gateway: 172.16.22.1
